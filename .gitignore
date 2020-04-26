@@ -2,7 +2,7 @@
 _site
 .sass-cache
 .vagrant
-
+scripts/postbot/__pycache__
 # general
 .DS_Store
 Thumbs.db
