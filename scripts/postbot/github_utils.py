@@ -1,10 +1,10 @@
+import traceback
 from git import Repo #GitPython
-
 from github import Github #PyGithub
 
 def github_pull_request(branch_name, title = "Daily Post Policy"):
     # g = Github("cf033246877d7e44586074282688c7803129092c") #token tatungbot
-    g = Github("f31bd948bd1479619d15c5cf8f830fa557eef382") #token tatung
+    g = Github("a5969d41d807f7aeb6f85fe4ff5b61cb6d7d0426") #token tatung
     covidrepo = g.get_repo("thongtincovid19/thongtincovid19.github.io")
     print(covidrepo.name)
     body = "New daily post"

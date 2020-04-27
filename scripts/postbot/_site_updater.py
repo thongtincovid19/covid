@@ -20,8 +20,15 @@ dirname = "/home/ubuntu/covid19_repo"
 json_gen_script = 'https://script.google.com/macros/s/AKfycbyOTr7VIG-a6yLJwIUSarxhcu37hlZTmWx4BF2PRxIYa2OiR0Xf/exec'
 json_keys = {'title': "Title", 'content':'Content', 'source_label': 'Source', 'source_url': 'SourceLink', 'date': 'Date', 'tags': 'hashtags', 'translator': 'Translator', 'penname': 'PenName', 'status': 'Status'}
 
-def getPost(title, content, src_lbl, src_url, date, category, tags):
-    return f'---\nlayout: post\ntitle: {title}\ncategory: {category}\ntags: {tags}\n---\n{content}\n\nNguồn: [{src_lbl}]({src_url})'
+def getPost(title, content, src_lbl, src_url, date, category, tags, penname):
+    post = f'---\nlayout: post\ntitle: {title}\ncategory: {category}\ntags: {tags}\n---\n{content}\n\n'
+    if penname:
+        # return f'---\nlayout: post\ntitle: {title}\ncategory: {category}\ntags: {tags}\n---\n{content}\n\nNgười dịch: {penname}\n\nNguồn: [{src_lbl}]({src_url})'
+        post += f'Người dịch: {penname}\n\n'
+    
+    if src_lbl and src_url:
+        post += f'Nguồn: [{src_lbl}]({src_url})'
+    return post
 
 def genPost(origin, repo):
     try:  
@@ -66,7 +73,7 @@ def genPost(origin, repo):
                 branch_name = fname
                 gitutils.github_checkout(origin, repo, branch_name=branch_name)
                 with open(absFname, 'wt', encoding='utf-8') as f:
-                    f.write(getPost(title, content, src_lbl, src_url, date, category="news", tags=tags))
+                    f.write(getPost(title, content, src_lbl, src_url, date, category="news", tags=tags, penname=penname))
                 changed = [ item.a_path for item in repo.index.diff(None) ]
                 pull_request_branch = None
                 if len(changed) > 0:
@@ -90,8 +97,6 @@ def genPost(origin, repo):
                 if not pull_request_branch:
                     # delete not pushed branch
                     repo.git.branch("-D", branch_name)
-            # elif curDate <= "2020-04-24":
-            #     print(f"Skip: {curDate}")
             else:
                 print(f"Skip: {fname}")
                 
@@ -115,6 +120,8 @@ def run():
     # print(f"repo.head.commit: {current}")
     
     origin = repo.remote(name='origin')
+    
+    repo.git.checkout("-f", "master")
     
     repo.remotes.origin.fetch()
     origin.pull()
