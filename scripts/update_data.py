@@ -517,12 +517,22 @@ def get_data_from_mhlw():
 
     df = df.reset_index()
     number_pattern = re.compile('([0-9,]+)\\r\(([\+\-0-9,]+)\).*')
+    pattern1 = re.compile('([0-9,]+).*')
+    pattern2 = re.compile('\(([\+\-0-9,]+)\).*')
     nums = []
     for i in range(len(df)):
         if df.iloc[i, 0] != '合計':
             continue
-        for val in df.iloc[i].values:
-            m = number_pattern.search(str(val))
+        values1 = df.iloc[i].values[1:]
+        values2 = df.iloc[i+1].values[1:]
+        for val1, val2 in zip(values1, values2):
+            val = str(val1)
+            if isinstance(val2, str):
+                m1 = pattern1.search(str(val1))
+                m2 = pattern2.search(str(val2))
+                if m1 is not None and m2 is not None:
+                    val = str(val1) + '\r' + str(val2)
+            m = number_pattern.search(val)
             if m is None:
                 continue
             nums.append((locale.atoi(m.group(1)), locale.atoi(m.group(2))))
@@ -530,7 +540,6 @@ def get_data_from_mhlw():
             break
 
     assert len(nums) == 7
-
 
     return nums[1], nums[4], nums[5]
 
