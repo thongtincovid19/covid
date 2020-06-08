@@ -14,4 +14,5 @@ Liên lạc qua email: <a href="mailto:{{ site.social-network-links.email }}">{{
 Cảm ơn!
 
 {% include media-about-us.html %}
+{% include sponsors.html %}
 {% include partners.html %}
