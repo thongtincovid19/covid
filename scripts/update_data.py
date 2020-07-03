@@ -379,6 +379,7 @@ class PatientByCityFukuokaDataset(datasets.JsonDataset):
     COL_AGE = 'Age'
     COL_SEX = 'Sex'
     COL_DISCHARGED = 'Discharged'
+    COL_INFECTED_METHOD = 'Infected method'
     COL_DATE = 'Date'
 
     def __init__(self, **kwargs):
