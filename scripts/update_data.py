@@ -379,6 +379,7 @@ class PatientByCityFukuokaDataset(datasets.JsonDataset):
     COL_AGE = 'Age'
     COL_SEX = 'Sex'
     COL_DISCHARGED = 'Discharged'
+    COL_INFECTED_METHOD = 'Infected method'
     COL_DATE = 'Date'
 
     def __init__(self, **kwargs):
@@ -501,47 +502,27 @@ def init_firebase_app():
 
 
 def get_data_from_mhlw():
-    CRAWL_URL = 'https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000164708_00001.html'
-    QUERY_HEADERS = {
-        'User-Agent': 'Mozilla/5.0',
-    }
-
-    request = urllib.request.Request(CRAWL_URL, headers=QUERY_HEADERS)
-    with urllib.request.urlopen(request) as url:
-        dom = url.read().decode()
-
-    pdf_url = re.search(r'<a [^>]*href="([^"]+)">新型コロナウイルスの発生状況[^<]*</a>', dom).group(1)
-    df = tabula.read_pdf(pdf_url, lattice=True)
-    if isinstance(df, list):
-        df = df[0]
-
-    df = df.reset_index()
-    number_pattern = re.compile('([0-9,]+)\\r\(([\+\-0-9,]+)\).*')
-    pattern1 = re.compile('([0-9,]+).*')
-    pattern2 = re.compile('\(([\+\-0-9,]+)\).*')
-    nums = []
-    for i in range(len(df)):
-        if df.iloc[i, 0] != '合計':
-            continue
-        values1 = df.iloc[i].values[1:]
-        values2 = df.iloc[i+1].values[1:]
-        for val1, val2 in zip(values1, values2):
-            val = str(val1)
-            if isinstance(val2, str):
-                m1 = pattern1.search(str(val1))
-                m2 = pattern2.search(str(val2))
-                if m1 is not None and m2 is not None:
-                    val = str(val1) + '\r' + str(val2)
-            m = number_pattern.search(val)
-            if m is None:
-                continue
-            nums.append((locale.atoi(m.group(1)), locale.atoi(m.group(2))))
-        else:
-            break
-
-    assert len(nums) == 7
-
-    return nums[1], nums[4], nums[5]
+    NEW_CASE_DAILY_CSV = 'https://www.mhlw.go.jp/content/pcr_positive_daily.csv'
+    new_cases = pd.read_csv(NEW_CASE_DAILY_CSV)
+    new_cases.columns = ['Date', 'Cases']
+    cases_total = int(new_cases['Cases'].sum())
+    cases_changes = int(new_cases['Cases'].to_list()[-1])
+    
+    RECOVERED_CSV = 'https://www.mhlw.go.jp/content/recovery_total.csv'
+    recovered = pd.read_csv(RECOVERED_CSV)
+    recovered.columns = ['Date', 'Cases']
+    recovered_values = recovered['Cases'].to_list()
+    recovered_total = int(recovered_values[-1])
+    recovered_changes = int(recovered_values[-1] - recovered_values[-2])
+    
+    DEATH_CSV = 'https://www.mhlw.go.jp/content/death_total.csv'
+    death = pd.read_csv(DEATH_CSV)
+    death.columns = ['Date', 'Cases']
+    death_values = death['Cases'].astype(int).to_list()
+    death_total = int(death_values[-1])
+    death_changes = int(death_values[-1] - death_values[-2])
+    
+    return (cases_total, cases_changes), (recovered_total, recovered_changes), (death_total, death_changes)
 
 
 def update_cases_recovered_deaths(bucket):
@@ -614,7 +595,7 @@ def main(args=None):
     update_cases_recovered_deaths(bucket)
     print('-' * 20)
     # update_clinic(bucket)
-    update_detailed_data(bucket)
+    # update_detailed_data(bucket)
 
     return 0
 
